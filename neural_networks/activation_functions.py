@@ -3,8 +3,11 @@ import numpy as np
 def Linear (x, k, b):
     return k * x + b
 
-def Sigmoid(x):
-    return 1.0 / (1.0 + np.exp(-x))
+class Sigmoid:
+    def __call__(self, x):
+        return 1.0 / (1.0 + np.exp(-x))
+    def gradient(self, x):
+        return np.exp(x) / (1 + np.exp(x))
 
 def Softmax(x):
     exps = np.exp(x)
