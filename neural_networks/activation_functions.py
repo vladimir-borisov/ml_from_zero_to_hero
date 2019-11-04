@@ -1,7 +1,10 @@
 import numpy as np
 
-def Linear (x, k, b):
-    return k * x + b
+class Linear:
+    def __call__(self, x):
+        return x
+    def gradient(self, x):
+        return 1
 
 class Sigmoid:
     def __call__(self, x):

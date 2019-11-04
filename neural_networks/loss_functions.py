@@ -1,5 +1,12 @@
 import numpy as np
 
+class SquareLoss:
+    def __call__(self, y_pred, y):
+        return 0.5 * np.power((y - y_pred), 2)
+
+    def gradient(self, y_pred, y):
+        return -(y - y_pred)
+
 class MeanSquaredError:
     def __call__ (self, predict_labels, true_labels):
 
@@ -31,5 +38,5 @@ class MeanSquaredError:
 
 ans = MeanSquaredError()
 
-print(ans(np.array([1, 2]), np.array([2, 2])))
-print(ans.gradient(np.array([1, 2]), np.array([2, 2])))
+#print(ans(np.array([1, 2]), np.array([2, 2])))
+#print(ans.gradient(np.array([1, 2]), np.array([2, 2])))
