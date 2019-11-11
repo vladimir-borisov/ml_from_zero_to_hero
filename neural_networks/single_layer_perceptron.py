@@ -4,9 +4,9 @@ from neural_networks.loss_functions import MeanSquaredError, SquareLoss
 
 
 '''
-One layer perceptron: class consists of only 2 layers (input, output)
+Signle Layer Perceptron: class consists of only 2 layers (input, output)
 '''
-class OneLayerPreceptron:
+class SingleLayerPreceptron:
 
     def __init__(self, input_size, output_size, learning_rate, activation_function = Sigmoid, loss_function = MeanSquaredError):
 
@@ -28,19 +28,34 @@ class OneLayerPreceptron:
         self.learning_rate = learning_rate
 
     #update weights by batch
-    def fit_batch(self, x, labels):
+    def fit(self, x, true_labels):
         pass
 
-    #update weights by 1 sample
-    def fit_one(self, x, labels):
-        self.backward(x, labels)
+    '''
+        Make the forward pass
 
-
+        Input:
+            x: numpy ndarray
+                this value must to have the same size like the network expect
+        Output
+            None
+    '''
     def forward(self, x):
         weighted_sum = x.dot(self.w) + self.bias
         self.outputs = self.activation_function(weighted_sum)
 
-    def backward(self, x, true_labels):
+    '''
+        The function changes weights by one sample
+        
+        Input: 
+            x: numpy ndarray
+                Input values 
+            true_labels: numpy ndarray 
+                Correct labels for inputs
+        Output:
+            None
+    '''
+    def fit_one(self, x, true_labels):
 
         #Reshape x to shape (1, len(x)) for easy the next opeartions like transpose
         x = x.reshape((1, len(x)))
