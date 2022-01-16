@@ -1,5 +1,5 @@
-from neural_networks.loss_functions import MeanSquaredError
-from neural_networks.optimizers import StochasticGradientDescent
+from mlzero.deep_learning.loss_functions import MeanSquaredError
+from mlzero.deep_learning.optimizers import StochasticGradientDescent
 
 class NeuralNetwork:
     def __init__(self, loss_function = MeanSquaredError, optimizer = StochasticGradientDescent):

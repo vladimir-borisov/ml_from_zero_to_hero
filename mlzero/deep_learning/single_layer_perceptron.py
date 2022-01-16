@@ -1,7 +1,6 @@
 import numpy as np
-from neural_networks.activation_functions import ReLU, Softmax, ELU, Sigmoid, Linear
-from neural_networks.loss_functions import MeanSquaredError, SquareLoss
-
+from mlzero.deep_learning.activation_functions import Sigmoid
+from mlzero.deep_learning.loss_functions import MeanSquaredError
 
 '''
 Signle Layer Perceptron: class consists of only 2 layers (input, output)
