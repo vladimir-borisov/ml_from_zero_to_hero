@@ -1,1 +1,1 @@
-from mlzero.deep_learning.neural_net import NeuralNetwork
+from mlzero.deep_learning.neural_network import NeuralNetwork

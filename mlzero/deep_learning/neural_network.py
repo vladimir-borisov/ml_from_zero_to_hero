@@ -1,4 +1,4 @@
-from mlzero.deep_learning.loss_functions import MeanSquaredError
+from mlzero.metrics.loss_functions import MeanSquaredError
 from mlzero.deep_learning.optimizers import StochasticGradientDescent
 
 class NeuralNetwork:
