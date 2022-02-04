@@ -2,7 +2,7 @@ from __future__ import annotations # for self annotation in the return statement
 import numpy as np
 from typing import Callable
 from mlzero.metrics.loss_functions import MeanSquaredError as MSE
-
+from mlzero.metrics.regularization_functions import L1_regularization, L2_regularization, L1_L2_regularization
 
 class LinearRegression:
     """
@@ -75,25 +75,28 @@ class LinearRegressionSGD:
                          W - coefficients of Linear Regression (w0, w1, ... , wN)
 
         Links:
-            -
-
+            1. https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.htmls
         Notes:
             1. biases are included in X and W matrix
 
     """
 
-    def __init__(self, loss: Callable = MSE(), max_iter: int = 1000, learning_rate: float = 0.01) -> LinearRegressionSGD:
+    def __init__(self, loss: Callable = MSE(), max_iter: int = 1000, learning_rate: float = 0.01,
+                 regularization_function = None) -> LinearRegressionSGD:
         """
 
             Input:
                 loss: loss function for the model
-                max_iter:
+                max_iter: number of gradient descent updates
+                learning_rate: coefficient for gradient scaling during weights updating step
+                regularization_function: regularization for weights (e.g. L1, L2)
             Output:
                 self
         """
         self.loss = loss
         self.max_iter = max_iter
         self.learning_rate = learning_rate
+        self.regularization_function = regularization_function
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> LinearRegression:
         """
@@ -118,6 +121,10 @@ class LinearRegressionSGD:
             loss_gradient = self.loss.gradient(y, y_pred)
             weights_gradient = loss_gradient @ X_  # we use the chain rule to get loss gradient with respect to each weight
 
+            # add gradient from regularization function if it's defined
+            if (self.regularization_function is not None):
+                weights_gradient += self.regularization_function.gradient(self.weights)
+
             self.weights -= weights_gradient * self.learning_rate
 
         return self
@@ -136,3 +143,77 @@ class LinearRegressionSGD:
         X_ = np.insert(X, 0, 1, axis=1)
 
         return X_ @ self.weights
+
+
+class LassoRegression(LinearRegressionSGD):
+    """
+        Linear regression with L1 norm which is used as a regularization for weights
+
+        Actually we optimize:
+
+            LOSS_FUNCTION + L1_NORM_OF_WEIGHTS
+
+        Links:
+            1.https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html
+    """
+
+    def __init__(self, loss: Callable = MSE(), max_iter: int = 1000, learning_rate: float = 0.01, alpha: float = 1.0) -> LassoRegression:
+        """
+
+            Input:
+                alpha: regularization strength, bigger -> stronger
+            Output:
+                -
+        """
+        super(LassoRegression, self).__init__(loss=loss, max_iter=max_iter, learning_rate=learning_rate,
+                                              regularization_function=L1_regularization(alpha=alpha))
+
+class RidgeRegression(LinearRegressionSGD):
+    """
+        Linear regression with L2 norm which is used as a regularization for weights
+
+        Actually we optimize:
+
+            LOSS_FUNCTION + L2_NORM_OF_WEIGHTS
+
+    """
+
+    def __init__(self, loss: Callable = MSE(), max_iter: int = 1000, learning_rate: float = 0.01, alpha: float = 1.0) -> RidgeRegression:
+        """
+
+            Input:
+               loss: function which we try to minimize
+               max_iter: how many iterations we are reade
+               learning_rate: coefficient for gradient scaling during weights updating step
+               alpha: regularization strength, bigger -> stronger
+            Output:
+
+        """
+        super(RidgeRegression, self).__init__(loss=loss, max_iter=max_iter, learning_rate=learning_rate,
+                                              regularization_function=L2_regularization(alpha=alpha))
+
+
+class ElasticNetRegression(LinearRegressionSGD):
+    """
+        Linear regression with L1+L2 norm which is used as a regularization for weights
+
+        Actually we optimize:
+
+            LOSS_FUNCTION + L1_NORM_OF_WEIGHTS + L2_NORM_OF_WEIGHTS
+
+    """
+
+    def __init__(self, loss: Callable = MSE(), max_iter: int = 1000, learning_rate: float = 0.01,
+                 l1_ratio: float = 0.5, alpha: float = 1.0) -> ElasticNetRegression:
+        """
+
+            Input:
+               loss: function which we try to minimize
+               max_iter: how many iterations we are reade
+               learning_rate: coefficient for gradient scaling during weights updating step
+               alpha: regularization strength, bigger -> stronger
+            Output:
+
+        """
+        super(ElasticNetRegression, self).__init__(loss=loss, max_iter=max_iter, learning_rate=learning_rate,
+                                                   regularization_function=L1_L2_regularization(alpha=alpha, l1_ratio=l1_ratio))
