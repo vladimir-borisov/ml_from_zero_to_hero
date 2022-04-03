@@ -27,6 +27,8 @@ input/output variables and function names.
 ## Supervised learning
 
 - **Linear Regression**
+- **K Nearest Neighbours (KNN)**
+- **Support Vector Classifier (SVM)**
 
 ## Unsupervised learning
 
