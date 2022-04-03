@@ -2,10 +2,12 @@ import numpy as np
 from mlzero.metrics.activation_functions import Sigmoid
 from mlzero.metrics.loss_functions import MeanSquaredError
 
-'''
-Signle Layer Perceptron: class consists of only 2 layers (input, output)
-'''
+
 class SingleLayerPreceptron:
+
+    """
+        Signle Layer Perceptron: class consists of only 2 layers (input, output)
+    """
 
     def __init__(self, input_size, output_size, learning_rate, activation_function = Sigmoid, loss_function = MeanSquaredError):
 
