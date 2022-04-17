@@ -1,37 +1,41 @@
 import numpy as np
-from typing import Optional
+from typing import Optional, Callable
 from mlzero.metrics.kernel_functions import *
+from mlzero.metrics.loss_functions import HingeLoss
 import cvxopt
+
+#TODO: write function descriptions
 
 # Turn off CVXOPT output
 cvxopt.solvers.options['show_progress'] = False
 
 class SupportVectorClassifier:
     """
-    Support Vector Classifier base on QP(Quadratic Problem) optimization with CVXOPT library
+        Support Vector Classifier based on QP(Quadratic Problem) optimization with CVXOPT library
 
-    Links:
+        Naming of parameters is very close to Scikit-Learn
 
-        1. https://blog.dominodatalab.com/fitting-support-vector-machines-quadratic-programming [ENG] (QP optimization)
-        2. https://neerc.ifmo.ru/wiki/index.php?title=%D0%9C%D0%B5%D1%82%D0%BE%D0%B4_%D0%BE%D0%BF%D0%BE%D1%80%D0%BD%D1%8B%D1%85_%D0%B2%D0%B5%D0%BA%D1%82%D0%BE%D1%80%D0%BE%D0%B2_(SVM) [RU] (QP optimization)
-        3. https://habr.com/ru/company/ods/blog/484148/ [RU] (Hinge Loss + Gradient Descent)
-        4. https://towardsdatascience.com/support-vector-machine-python-example-d67d9b63f1c8 [ENG] (QP optimization)
-        5. https://xavierbourretsicotte.github.io/SVM_implementation.html [ENG] (QP using CVXOPT)
+        Links:
+
+            1. https://blog.dominodatalab.com/fitting-support-vector-machines-quadratic-programming [ENG] (QP optimization)
+            2. https://neerc.ifmo.ru/wiki/index.php?title=%D0%9C%D0%B5%D1%82%D0%BE%D0%B4_%D0%BE%D0%BF%D0%BE%D1%80%D0%BD%D1%8B%D1%85_%D0%B2%D0%B5%D0%BA%D1%82%D0%BE%D1%80%D0%BE%D0%B2_(SVM) [RU] (QP optimization)
+            3. https://towardsdatascience.com/support-vector-machine-python-example-d67d9b63f1c8 [ENG] (QP optimization)
+            4. https://xavierbourretsicotte.github.io/SVM_implementation.html [ENG] (QP using CVXOPT)
     """
 
 
-    def __init__(self, C: float = 1.0, kernel: str = 'linear', degree: int = 3, gamma: Optional[float] = None,
-                 coef0: float = 0.0):
-
+    def __init__(self, C: float = 1.0, kernel: str = 'linear',
+                 degree: int = 3, gamma: Optional[float] = None, coef0: float = 0.0):
         """
 
             Input:
-                C:
-                kernel:
-                degree:
-                gamma:
-                coef0:
+                C: regularization coefficient. The strength of the regularization is inversely proportional to C
+                kernel: type of kernel which will be applied to the input vectors
+                degree: degree of the polynomial kernel function (‘poly’)
+                gamma: kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
+                coef0: independent term in kernel function. It is only significant in ‘poly’ and ‘sigmoid’.
             Output:
+                SupportVectorClassifier instance
         """
 
         self.C = C
@@ -54,6 +58,20 @@ class SupportVectorClassifier:
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         """
+            Find the optimal parameters
+
+            We solve SVM with soft margin and use Karush — Kuhn — Tucker conditions for solving
+            non-linear optimization problem (quadratic problem)
+
+            The CVXOPT library is used for optimizing parameters
+
+            Input:
+                X: 2d array of input features with shape (n_samples, n_features)
+                y: labels for the given features with shape (n_samples, )
+                   NOTE: y = 1 or -1, if you have 0, 1 convert it to -1, 1
+            Output:
+                fitted instance of SupportVectorClassifier
+
         """
 
         n_samples, n_features = X.shape
@@ -130,10 +148,13 @@ class SupportVectorClassifier:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
+            Make prediction to the given set of input features
 
             Input:
-                X:
+                X: 2d array of input features with shape (n_samples, n_features)
             Output:
+                predicted labels for each input sample with shape (n_samples, )
+                output values are -1 or 1
         """
 
         y_pred = []
@@ -146,3 +167,79 @@ class SupportVectorClassifier:
             y_pred.append(np.sign(support_vector_values))
 
         return np.array(y_pred)
+
+#TODO: add regularization + apply function to the input values kind of kernel transformation
+class SupportVectorClassifierSGD:
+    """
+        Support Vector Classifier with Hinge Loss + SGD optimization
+
+        Links:
+            1. https://habr.com/ru/company/ods/blog/484148/ [RU] (Hinge Loss + Gradient Descent)
+            2. https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html#sklearn.svm.LinearSVC (very close but here we can use non-linear transformations)
+
+    """
+
+    def __init__(self, loss: Callable = HingeLoss(), max_iter: int = 1000, learning_rate: float = 0.01):
+        """
+            Input:
+                loss: function which we minimize. Hinge Loss is default for SVM
+                max_iter: number of iterations during optimization
+                learning_rate: how strong we change parameters on each optimization step
+            Output:
+                SupportVectorClassifierSGD object
+        """
+        self.loss = loss
+        self.max_iter = max_iter
+        self.learning_rate = learning_rate
+
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        """
+            Iteratively change SVM parameters for the best fit with loss function
+            Usually we optimize Hinge Loss with SGD (Stochastic Gradient Descent) as on optimization algorithm
+
+            Input:
+                X: input variables with shape (number_samples, number_features)
+                y: target values with shape (number_samples, ) and values equal 1 or -1
+            Output:
+                self
+        """
+
+        X_ = np.insert(X, 0, 1, axis=1)
+
+        self.weights = np.random.rand(X_.shape[1])  # just a random initialization in [0, 1) values range
+
+        for iter_ind in range(self.max_iter):
+
+            y_pred = self.predict(X)
+
+            loss_gradient = self.loss.gradient(y, y_pred)
+
+            #TODO: it doesn't take into account that y = sign(x * w + b), we consider it like y = x * w + b
+            #      is it correct???
+            weights_gradient = loss_gradient @ X_  # we use the chain rule to get loss gradient with respect to each weight
+
+
+            #TODO: add regulariztion for the weights
+            #add gradient from regularization function if it's defined
+            #if (self.regularization_function is not None):
+            #    weights_gradient += self.regularization_function.gradient(self.weights)
+
+            self.weights -= weights_gradient * self.learning_rate
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """
+            Predict values for the input features
+
+            Input:
+                X: input variable with shape (number_sample, number_features)
+            Output:
+                predictions for each sample with shape (number_samples, )
+                each prediction can be only 1,0,-1
+        """
+
+        # add a fake first column with ones instead of using separate bias variable
+        X_ = np.insert(X, 0, 1, axis=1)
+
+        return np.sign(X_ @ self.weights)

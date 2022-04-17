@@ -2,6 +2,10 @@
 
 Versions are following semantic versioning (https://semver.org/) 
 
+## Version 0.0.4 (17.04.2022)
+
+- Added Support Vector Classifier(SVC) with Hinge loss + SGD optimization
+
 ## Version 0.0.3 (03.04.2022)
 
 - Added Support Vector Classifier(SVC) with QP solver
