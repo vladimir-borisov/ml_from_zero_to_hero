@@ -2,6 +2,10 @@
 
 Versions are following semantic versioning (https://semver.org/) 
 
+## Version 0.0.5 (12.05.2022)
+
+- Added Decision Tree for classification
+
 ## Version 0.0.4 (17.04.2022)
 
 - Added Support Vector Classifier(SVC) with Hinge loss + SGD optimization

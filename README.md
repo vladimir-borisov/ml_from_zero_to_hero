@@ -29,6 +29,7 @@ input/output variables and function names.
 - **Linear Regression**
 - **K Nearest Neighbours (KNN)**
 - **Support Vector Classifier (SVM)**
+- **Decision Tree**
 
 ## Unsupervised learning
 
