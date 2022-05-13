@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Optional
-
+from mlzero.metrics.loss_functions import MeanSquaredError
 
 # TODO: move to metrics folder
 
@@ -78,7 +78,7 @@ class DecisionTreeNode:
             return self.right_child_node
 
 
-
+# TODO: add categorical features
 class DecisionTreeClassifier:
 
     """
@@ -111,6 +111,7 @@ class DecisionTreeClassifier:
         This realization doesn't follow any of the algorithms above. It's very straightforward without any optimization
         like pruning, memory or speed. Simplicity is the main goal :)
 
+        It also doesn't support categorical features.
 
         Links:
             1. https://scikit-learn.org/stable/modules/tree.html [EN]
@@ -238,6 +239,181 @@ class DecisionTreeClassifier:
                 y: 1d array, target value for corresponding features in X
             Output:
                 fitted object of DecisionTree class
+        """
+
+        self.tree_root = self.__build_tree__(X, y)
+
+        return self
+
+    def predict(self, X: np.ndarray):
+        """
+            Input:
+                X: 2d array, where 1 dimension is a number of samples and 2 dimension is a features
+            Output:
+                1d array of predicted labels
+        """
+
+        if (self.tree_root is None):
+            raise ValueError("The Decision Tree is not fitted yet")
+
+        y_ = []
+
+        for x in X:
+
+            # we start from root node
+            head = self.tree_root
+
+            # go deep until we reach a leaf
+            # it takes O(max deep) iterations in the worst case
+            while(not head.is_leaf):
+                head = head.get_child_node(x) # go down to a child node
+
+            # now we know that head is a leaf node so let's return a prediction
+
+            y_.append(head.value)
+
+        return np.array(y_)
+
+
+class DecisionTreeRegressor:
+
+    """
+        Decision Tree for Regression is the same as for classification but splitting criteria is different
+        Here we use MSE as a splitting criteria
+
+        Main idea is to pick a feature for splitting, then try to split and calculate MSE,
+        if MSE is ok -> save the split and continue building a tree
+
+        Links:
+            1. https://medium.com/analytics-vidhya/regression-trees-decision-tree-for-regression-machine-learning-e4d7525d8047 [EN]
+    """
+
+
+    def __init__(self, criterion: str = "mse", max_depth: Optional[int] = None,
+                 min_samples_split: int = 2):
+        """
+
+            Input:
+                criterion: which criteria we use for splitting a node
+                max_depth: max depth of a tree. depth - number of nodes from root to a particular node
+                min_samples_split: min number of values in array for splitting a node
+            Output:
+
+        """
+        self.criterion = criterion
+
+        if (criterion == 'mse'):
+            self.loss_function = MeanSquaredError()
+
+
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.tree_root = None
+
+    def __build_tree__(self, X: np.ndarray, y: np.ndarray, depth_level: int = 1):
+        """
+            Inner function which creates a binary tree
+
+            Input:
+                X: 2d array, where 1 dimension is a number of samples and 2 dimension is a features
+                y: 1d array, target value for corresponding features in X
+                depth_level: number of nodes from root node to the current node
+            Output:
+                DecisionTree root node
+        """
+
+        n_samples, n_features = X.shape
+
+        """ First as it's a recursion we define a terminal conditions for stopping infinity recursion """
+        # check if this node is a leaf node
+        if (len(np.unique(y)) == 1):  # if all labels are equal lets predict this label
+            return DecisionTreeNode(value=np.mean(y))
+
+
+        # if one of the conditions is met -> set this node as a leaf and return the most frequent value
+        if (((self.max_depth is not None) and (self.max_depth <= depth_level)) or (self.min_samples_split >= n_samples)):
+            return DecisionTreeNode(value=np.mean(y))
+
+        best_split_params = {
+            'left_node_indices': None,
+            'right_node_indices': None,
+            'mse_left': 100000000,
+            'mse_right': 100000000,
+            'feature_idx': -1,
+            'split_value': None
+        }
+
+        # let's find the best feature for splitting
+
+        for feature_idx, features in enumerate(X.T):
+
+            unique_features = np.unique(features)
+
+            # it doesn't make sense divide array if we have only one value
+            # because all elements will be in the same node
+            if (len(unique_features) == 1):
+                continue
+
+            for unique_feature in unique_features:
+
+                # find all the samples which
+                left_node_indices = features >= unique_feature
+                right_node_indices = features < unique_feature
+
+                # divide X and y for the left and right branches
+                # there is no copy here so don't change arrays or deepcopy them
+                X_left = X[left_node_indices, :]
+                y_left = y[left_node_indices]
+
+                X_right = X[right_node_indices, :]
+                y_right = y[right_node_indices]
+
+                # we can't split this node by this feature value
+                if (len(y_left) == 0 or len(y_right) == 0):
+                    continue
+
+                mse_left = self.loss_function(y_left, np.full(len(y_left), np.mean(y_left)))
+                mse_right = self.loss_function(y_right, np.full(len(y_right), np.mean(y_right)))
+
+                # check if this split is making out gini index better
+                # we just sum a gini coefficient in child nodes
+                if (mse_left + mse_right <
+                    best_split_params['mse_left'] + best_split_params['mse_right']):
+
+                    best_split_params['left_node_indices'] = left_node_indices
+                    best_split_params['right_node_indices'] = right_node_indices
+                    best_split_params['mse_left'] = mse_left
+                    best_split_params['mse_right'] = mse_right
+                    best_split_params['feature_idx'] = feature_idx
+                    best_split_params['split_value'] = unique_feature
+
+        # we couldn't find a features for divide so let's make it a leaf
+        if (best_split_params['feature_idx'] == -1):
+            return DecisionTreeNode(value=np.mean(y))
+
+        X_left = X[best_split_params['left_node_indices'], :]
+        y_left = y[best_split_params['left_node_indices']]
+
+        X_right = X[best_split_params['right_node_indices'], :]
+        y_right = y[best_split_params['right_node_indices']]
+
+        # we found best split
+        left_node = self.__build_tree__(X_left, y_left, depth_level + 1)
+        right_node = self.__build_tree__(X_right, y_right, depth_level + 1)
+
+        return DecisionTreeNode(feature_index= best_split_params['feature_idx'],
+                                left_child_node = left_node, right_child_node = right_node,
+                                split_value = best_split_params['split_value'])
+
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        """
+            Create decision tree from input features X and their labels y
+
+            Input:
+                X: 2d array, where 1 dimension is a number of samples and 2 dimension is a features
+                y: 1d array, target value for corresponding features in X
+            Output:
+                fitted object of DecisionTreeRegressor class
         """
 
         self.tree_root = self.__build_tree__(X, y)

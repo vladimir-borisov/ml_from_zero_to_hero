@@ -31,8 +31,8 @@ class MeanSquaredError:
             Calculate MSE
 
             Input:
-                y_true: correct (target) values
-                y_pred: predicted values
+                y_true: 1d numpy array, correct (target) values
+                y_pred: 1d nupmy array, predicted values
             Output:
                 One number - MSE score
         """

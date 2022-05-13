@@ -2,6 +2,10 @@
 
 Versions are following semantic versioning (https://semver.org/) 
 
+## Version 0.0.6 (13.05.2022)
+
+- Added Decision Tree for regression
+
 ## Version 0.0.5 (12.05.2022)
 
 - Added Decision Tree for classification
