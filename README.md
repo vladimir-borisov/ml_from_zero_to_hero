@@ -30,6 +30,7 @@ input/output variables and function names.
 - **K Nearest Neighbours (KNN)**
 - **Support Vector Classifier (SVM)**
 - **Decision Tree** (Classification, Regression)
+- **Gradient Boosting** (Classification, Regression)
 
 ## Unsupervised learning
 

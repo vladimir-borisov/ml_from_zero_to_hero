@@ -2,6 +2,12 @@
 
 Versions are following semantic versioning (https://semver.org/) 
 
+## Version 0.0.6 (20.05.2022)
+
+- Added Decision Tree Regressor for boosting
+- Added Gradient Boosting for classification and regression
+- Updated loss and activation functions
+
 ## Version 0.0.6 (13.05.2022)
 
 - Added Decision Tree for regression

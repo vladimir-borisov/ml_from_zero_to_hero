@@ -9,6 +9,19 @@ class Linear:
 class Sigmoid:
     def __call__(self, x):
         return 1.0 / (1.0 + np.exp(-x))
+
+    def inverse(self, y):
+        """
+            Get input value (X) by the function value (Y)
+
+            Input:
+                y: the output of the Sigmoid(x), usually treated as probability
+            Output:
+                x the intput of the Sigmoid(x), usually treated as log(odds)
+        """
+        return np.log(y / (1 - y))
+
+
     def gradient(self, x):
         return np.exp(x) / (1 + np.exp(x))
 
@@ -44,5 +57,4 @@ def ELU (x, a):
         return a * (np.exp(a) - 1)
     else:
         return x
-
 
