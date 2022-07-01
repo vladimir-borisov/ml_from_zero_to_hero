@@ -2,6 +2,11 @@
 
 Versions are following semantic versioning (https://semver.org/) 
 
+## Version 0.0.7 (01.07.2022)
+
+- Added Random Forest Classifier, Regressor 
+- Updated Decision Trees added max_features parameter
+
 ## Version 0.0.6 (20.05.2022)
 
 - Added Decision Tree Regressor for boosting

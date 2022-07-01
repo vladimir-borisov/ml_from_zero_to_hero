@@ -31,6 +31,7 @@ input/output variables and function names.
 - **Support Vector Classifier (SVM)**
 - **Decision Tree** (Classification, Regression)
 - **Gradient Boosting** (Classification, Regression)
+- **Random Forest** (Classification, Regression)
 
 ## Unsupervised learning
 

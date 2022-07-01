@@ -8,11 +8,3 @@ def standard_scale(data: np.ndarray, axis: int = 0):
     print(mean_, std_)
     return data - mean_ / std_
 
-
-X = np.array([[1, 2, 3],
-             [1, 1, 1]])
-
-print(X.shape)
-
-print(standard_scale(X, axis = 0))
-

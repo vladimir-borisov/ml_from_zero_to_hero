@@ -33,3 +33,37 @@ def train_test_split(*arrays) -> tuple:
             tuple of X, y with randomly shuffled elements
     """
     pass
+
+def bootstrap(X: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """
+        Apply boostrap to the input array + labels
+        We randomly take the data from the input array and labels and return it back.
+
+        Output array can have the equal entries because of boostrap logic
+
+        Input:
+            X: 2d input array of features
+            y: 1d input array of labels for the input samples
+        Output
+            bootstrapped features and labels
+    """
+
+    n_samples = len(y)
+
+    idx = np.random.randint(n_samples, size=n_samples)
+
+    return np.copy(X[idx]), np.copy(y[idx])
+
+
+def get_most_frequent_value(x: np.ndarray):
+    """
+        Get the most frequent value in the input array
+
+        Input:
+            x: numpy array any size with ALL NON-NEGATIVE values
+        Output:
+            the most frequent value
+    """
+
+    counts = np.bincount(x.flatten())
+    return np.argmax(counts)

@@ -118,13 +118,14 @@ class DecisionTreeClassifier:
 
 
     def __init__(self, criterion: str = "gini", max_depth: Optional[int] = None,
-                 min_samples_split: int = 2, loss = 'log_loss'):
+                 min_samples_split: int = 2, max_features = None, loss = 'log_loss'):
         """
 
             Input:
                 criterion: which criteria we use for splitting a node
                 max_depth: max depth of a tree. depth - number of nodes from root to a particular node
                 min_samples_split: min number of values in array for splitting a node
+                max_features: each split we will check randomly not more than "max_features" even if we have more
                 loss: loss function which we optimize by tree in leaves
             Output:
 
@@ -136,6 +137,7 @@ class DecisionTreeClassifier:
         self.criterion = criterion
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
+        self.max_features = max_features
         self.tree_root = None
 
         # binary cross entropy loss or log loss
@@ -143,9 +145,7 @@ class DecisionTreeClassifier:
             self.loss = BinaryCrossEntropy()
 
 
-
-
-    def _calculate_leaf_value(self, y: np.ndarray) -> np.float:
+    def _calculate_leaf_value(self, y: np.ndarray) -> float:
         """
             Calculate value in a leaf
 
@@ -179,6 +179,7 @@ class DecisionTreeClassifier:
 
         n_samples, n_features = X.shape
 
+        X_transposed = X.T
 
         """ First as it's a recursion we define a terminal conditions for stopping infinity recursion """
         # check if this node is a leaf node
@@ -201,7 +202,17 @@ class DecisionTreeClassifier:
 
         # let's find the best feature for splitting
 
-        for feature_idx, features in enumerate(X.T):
+        features_random_ids = self.max_features * [1] + (n_features - self.max_features) * [0] # choose random feature ids
+        np.random.shuffle(features_random_ids)
+
+
+        for feature_idx, features_status in enumerate(features_random_ids):
+
+            # 0 means we don't consider this feature
+            if (features_status == 0):
+                continue
+
+            features = X_transposed[feature_idx]
 
             unique_features = np.unique(features)
 
@@ -268,6 +279,15 @@ class DecisionTreeClassifier:
                 fitted object of DecisionTree class
         """
 
+        n_samples, n_features = X.shape
+
+        if (self.max_features is None):
+            self.max_features = n_features
+        elif (isinstance(self.max_features, str)):
+            if (self.max_features == 'sqrt'):
+                self.max_features = int(np.sqrt(n_features))
+
+
         self.tree_root = self.__build_tree__(X, y)
 
         return self
@@ -301,7 +321,6 @@ class DecisionTreeClassifier:
 
         return np.array(y_)
 
-
 class DecisionTreeRegressor:
 
     """
@@ -318,13 +337,15 @@ class DecisionTreeRegressor:
 
 
     def __init__(self, criterion: str = "mse", max_depth: Optional[int] = None,
-                 min_samples_split: int = 2):
+                 min_samples_split: int = 2, max_features = None):
         """
 
             Input:
                 criterion: which criteria we use for splitting a node
                 max_depth: max depth of a tree. depth - number of nodes from root to a particular node
                 min_samples_split: min number of values in array for splitting a node
+                max_features: each split we will check randomly not more than "max_features" even if we have more
+                              if None consider all features
             Output:
 
         """
@@ -336,9 +357,10 @@ class DecisionTreeRegressor:
 
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
+        self.max_features = max_features
         self.tree_root = None
 
-    def _calculate_leaf_value(self, y: np.ndarray) -> np.float:
+    def _calculate_leaf_value(self, y: np.ndarray) -> float:
         """
             Calculate value in a leaf
 
@@ -351,7 +373,7 @@ class DecisionTreeRegressor:
                 one value - prediction for this leaf
         """
 
-        return np.mean(y)
+        return self.loss_function.optimal_value(y)
 
     def __build_tree(self, X: np.ndarray, y: np.ndarray, depth_level: int = 0):
         """
@@ -366,6 +388,8 @@ class DecisionTreeRegressor:
         """
 
         n_samples, n_features = X.shape
+
+        X_transposed = X.T
 
         """ First as it's a recursion we define a terminal conditions for stopping infinity recursion """
         # check if this node is a leaf node
@@ -388,7 +412,16 @@ class DecisionTreeRegressor:
 
         # let's find the best feature for splitting
 
-        for feature_idx, features in enumerate(X.T):
+        features_random_ids = self.max_features * [1] + (n_features - self.max_features) * [0]  # choose random feature ids
+        np.random.shuffle(features_random_ids)
+
+        for feature_idx, features_status in enumerate(features_random_ids):
+
+            # 0 means we don't consider this feature
+            if (features_status == 0):
+                continue
+
+            features = X_transposed[feature_idx]
 
             unique_features = np.unique(features)
 
@@ -460,6 +493,14 @@ class DecisionTreeRegressor:
                 fitted object of DecisionTreeRegressor class
         """
 
+        n_samples, n_features = X.shape
+
+        if (self.max_features is None):
+            self.max_features = n_features
+        elif (isinstance(self.max_features, str)):
+            if (self.max_features == 'sqrt'):
+                self.max_features = int(np.sqrt(n_features))
+
         self.tree_root = self.__build_tree(X, y)
 
         return self
@@ -512,16 +553,18 @@ class BoostingDecisionTreeRegressor:
 
 
     def __init__(self, criterion: str = "mse", max_depth: Optional[int] = None,
-                 min_samples_split: int = 2, loss = 'log_loss'):
+                 min_samples_split: int = 2, max_features = None, loss = 'log_loss'):
         """
 
             Input:
                 criterion: which criteria we use for splitting a node
                 max_depth: max depth of a tree. depth - number of nodes from root to a particular node
                 min_samples_split: min number of values in array for splitting a node
+                max_features: each split we will check randomly not more than "max_features" even if we have more
+                              if None consider all features
                 loss: loss function which we optimize by tree in leaves
                       log_loss - for classification
-                      mse - for regression
+                      squared error - for regression
             Output:
 
 
@@ -534,6 +577,7 @@ class BoostingDecisionTreeRegressor:
         self.criterion_name = criterion
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
+        self.max_features = max_features
         self.tree_root = None
 
         # this function is used for splittiong a node
@@ -543,7 +587,7 @@ class BoostingDecisionTreeRegressor:
             self.criterion_function = SquaredError()
 
 
-    def _calculate_leaf_value(self, y_true: np.ndarray, y_prev: np.ndarray) -> np.float:
+    def _calculate_leaf_value(self, y_true: np.ndarray, y_prev: np.ndarray) -> float:
         """
             Calculate the optimal value in a leaf
 
@@ -558,10 +602,11 @@ class BoostingDecisionTreeRegressor:
         """
 
         # for this case we use a second order Taylor Polynomial
-        # this is true only for log_loss !!! for other cases
+        # this is true only for log_loss !!!
         if (self.loss_name == 'log_loss'):
             return np.sum(y_true) / np.sum(y_prev * (1 - y_prev))
 
+        # note that for squared error it does not depends on the previous values
         if (self.loss_name == 'squared_error'):
             return np.mean(y_true)
 
@@ -584,6 +629,8 @@ class BoostingDecisionTreeRegressor:
 
         n_samples, n_features = X.shape
 
+        X_transposed = X.T
+
         """ First as it's a recursion we define a terminal conditions for stopping infinity recursion """
         # check if this node is a leaf node
         if (gini_index(y_true) == 1):  # if all labels are equal lets predict this label
@@ -605,7 +652,16 @@ class BoostingDecisionTreeRegressor:
 
         # let's find the best feature for splitting
 
-        for feature_idx, features in enumerate(X.T):
+        features_random_ids = self.max_features * [1] + (n_features - self.max_features) * [0]  # choose random feature ids
+        np.random.shuffle(features_random_ids)
+
+        for feature_idx, features_status in enumerate(features_random_ids):
+
+            # 0 means we don't consider this feature
+            if (features_status == 0):
+                continue
+
+            features = X_transposed[feature_idx]
 
             unique_features = np.unique(features)
 
@@ -678,6 +734,14 @@ class BoostingDecisionTreeRegressor:
             Output:
                 fitted object of DecisionTree class
         """
+
+        n_samples, n_features = X.shape
+
+        if (self.max_features is None):
+            self.max_features = n_features
+        elif (isinstance(self.max_features, str)):
+            if (self.max_features == 'sqrt'):
+                self.max_features = int(np.sqrt(n_features))
 
         self.tree_root = self.__build_tree__(X, y_true = y_true, y_prev = y_prev)
 
